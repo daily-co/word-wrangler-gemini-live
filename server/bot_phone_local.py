@@ -4,6 +4,21 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
+"""
+Word Wrangler: A voice-based word guessing game.
+
+To run this demo:
+1. Set up environment variables:
+   - GOOGLE_API_KEY: API key for Google services
+   - GOOGLE_TEST_CREDENTIALS_FILE: Path to Google credentials JSON file
+
+2. Install requirements:
+   pip install -r requirements.txt
+
+3. Run in local development mode:
+   LOCAL_RUN=1 python word_wrangler.py
+"""
+
 import asyncio
 import os
 import re
@@ -66,6 +81,9 @@ if LOCAL_RUN:
 logger.add(sys.stderr, level="DEBUG")
 
 GAME_DURATION_SECONDS = 120
+NUM_WORDS_PER_GAME = 20
+HOST_VOICE_ID = "en-US-Chirp3-HD-Charon"
+PLAYER_VOICE_ID = "Kore"
 
 # Define conversation modes with their respective prompt templates
 game_player_prompt = """You are a player for a game of Word Wrangler.
@@ -412,7 +430,7 @@ class ResettablePlayerLLM(GeminiMultimodalLiveLLMService):
         system_instruction: str,
         new_word_notifier: BaseNotifier,
         host_stopped_speaking_notifier: BaseNotifier,
-        voice_id: str = "Kore",
+        voice_id: str = PLAYER_VOICE_ID,
         **kwargs,
     ):
         super().__init__(
@@ -542,7 +560,7 @@ async def main(room_url: str, token: str):
     # Use the provided session logger if available, otherwise use the default logger
     logger.debug("Starting bot in room: {}", room_url)
 
-    game_words = generate_game_words(20)
+    game_words = generate_game_words(NUM_WORDS_PER_GAME)
     words_string = ", ".join(f'"{word}"' for word in game_words)
     logger.debug(f"Game words: {words_string}")
 
@@ -589,7 +607,7 @@ Important guidelines:
     )
 
     host_tts = GoogleTTSService(
-        voice_id="en-US-Chirp3-HD-Charon",
+        voice_id=HOST_VOICE_ID,
         credentials_path=os.getenv("GOOGLE_TEST_CREDENTIALS_FILE"),
         text_filter=HostResponseTextFilter(),
     )
@@ -620,7 +638,7 @@ Important guidelines:
         system_instruction=player_instruction,
         new_word_notifier=new_word_notifier,
         host_stopped_speaking_notifier=bot_speaking_notifier,
-        voice_id="Kore",
+        voice_id=PLAYER_VOICE_ID,
     )
 
     # Set up the initial context for the conversation
@@ -637,19 +655,25 @@ Important guidelines:
 
     pipeline = Pipeline(
         [
-            transport.input(),
-            stt_mute_filter,
+            transport.input(),  # Receive audio/video from Daily call
+            stt_mute_filter,    # Filter out speech during the bot's initial turn
             ParallelPipeline(
+                # Host branch: manages the game and provides words
                 [
-                    consumer,
-                    host_llm,
-                    game_state_tracker,
-                    host_tts,
-                    bot_stopped_speaking_detector,
+                    consumer,             # Receives audio from the player branch
+                    host_llm,             # AI host that provides words and tracks score
+                    game_state_tracker,   # Tracks words and score from host responses
+                    host_tts,             # Converts host text to speech
+                    bot_stopped_speaking_detector,  # Notifies when host stops speaking
                 ],
-                [start_frame_gate, player_llm, producer],
+                # Player branch: guesses words based on human descriptions
+                [
+                    start_frame_gate,     # Gates the player until host finishes intro
+                    player_llm,           # AI player that makes guesses
+                    producer,             # Collects audio frames to be passed to the consumer
+                ],
             ),
-            transport.output(),
+            transport.output(),  # Send audio/video back to Daily call
         ]
     )
 
