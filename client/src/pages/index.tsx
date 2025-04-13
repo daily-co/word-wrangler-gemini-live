@@ -29,7 +29,7 @@ export default function Home() {
 
   if (gameEnded) {
     return (
-      <div className="flex flex-col justify-between lg:justify-center items-center h-screen py-4">
+      <div className="flex flex-col justify-between lg:justify-center items-center min-h-[100dvh] py-4">
         <div className="flex flex-1 w-full">
           <Card className="w-full lg:max-w-2xl mx-auto mt-[50px] lg:mt-[120px] self-center text-center pt-[62px]">
             <div className="flex items-center justify-center w-[162px] h-[162px] rounded-full absolute z-20 -top-[81px] left-1/2 -translate-x-1/2 animate-bounce-in">
@@ -65,7 +65,7 @@ export default function Home() {
 
   if (!hasStarted) {
     return (
-      <div className="flex flex-col justify-between lg:justify-center items-center h-screen py-4">
+      <div className="flex flex-col justify-between items-center min-h-[100dvh] py-4 overflow-hidden">
         <div className="flex flex-1">
           <Card className="lg:min-w-2xl mx-auto mt-[50px] lg:mt-[120px] self-center">
             <Image
