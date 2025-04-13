@@ -175,8 +175,8 @@ export const WordWrangler: React.FC<{
   }, []);
 
   return (
-    <div className="container mx-auto">
-      <div className="flex flex-col items-center justify-center h-screen">
+    <div className="min-h-[100dvh] flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center h-screen">
         <div className="flex flex-1 flex-col lg:flex-row gap-6 lg:gap-12 items-center justify-center w-full lg:w-auto">
           <div className={styles.gameContainer}>
             <Image
@@ -194,7 +194,6 @@ export const WordWrangler: React.FC<{
                 showIncorrect={visualFeedback.showIncorrect}
                 score={gameState.score}
                 skipsRemaining={gameState.skipsRemaining}
-                //onCorrect={handleManualCorrect}
                 onSkip={handleSkip}
               />
             </div>
