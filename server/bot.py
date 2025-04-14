@@ -11,6 +11,9 @@ from typing import Any, Dict
 import aiohttp
 from dotenv import load_dotenv
 from loguru import logger
+from pipecatcloud.agent import DailySessionArguments
+
+from pipecat.audio.filters.krisp_filter import KrispFilter
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -24,7 +27,6 @@ from pipecat.processors.frameworks.rtvi import (
 )
 from pipecat.services.gemini_multimodal_live.gemini import GeminiMultimodalLiveLLMService
 from pipecat.transports.services.daily import DailyParams, DailyTransport
-from pipecatcloud.agent import DailySessionArguments
 
 # Check if we're in local development mode
 LOCAL_RUN = os.getenv("LOCAL_RUN")
@@ -97,6 +99,7 @@ async def main(room_url: str, token: str, config: Dict[str, Any]):
         token,
         "Word Wrangler Bot",
         DailyParams(
+            audio_in_filter=KrispFilter(),
             audio_out_enabled=True,
             vad_enabled=True,
             vad_analyzer=SileroVADAnalyzer(),
@@ -125,7 +128,6 @@ Important guidelines:
     llm = GeminiMultimodalLiveLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         transcribe_user_audio=True,
-        transcribe_model_audio=True,
         system_instruction=system_instruction,
     )
 
