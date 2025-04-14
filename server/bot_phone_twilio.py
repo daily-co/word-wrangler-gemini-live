@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""
-Word Wrangler: A voice-based word guessing game.
+"""Word Wrangler: A voice-based word guessing game.
 
 This demo version is intended to be deployed to
 Pipecat Cloud. For more information, visit:
@@ -23,6 +22,10 @@ from typing import Any, Mapping, Optional
 from dotenv import load_dotenv
 from fastapi import WebSocket
 from loguru import logger
+from pipecatcloud import WebSocketSessionArguments
+from word_list import generate_game_words
+
+from pipecat.audio.filters.krisp_filter import KrispFilter
 from pipecat.audio.resamplers.soxr_resampler import SOXRAudioResampler
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.frames.frames import (
@@ -61,8 +64,6 @@ from pipecat.transports.network.fastapi_websocket import (
     FastAPIWebsocketTransport,
 )
 from pipecat.utils.text.base_text_filter import BaseTextFilter
-from pipecatcloud import WebSocketSessionArguments
-from word_list import generate_game_words
 
 load_dotenv(override=True)
 
@@ -560,6 +561,7 @@ async def main(ws: WebSocket):
         websocket=ws,
         params=FastAPIWebsocketParams(
             audio_in_enabled=True,
+            audio_in_filter=KrispFilter(),
             audio_out_enabled=True,
             add_wav_header=False,
             vad_enabled=True,
@@ -649,21 +651,21 @@ Important guidelines:
     pipeline = Pipeline(
         [
             transport.input(),  # Receive audio/video from Daily call
-            stt_mute_filter,    # Filter out speech during the bot's initial turn
+            stt_mute_filter,  # Filter out speech during the bot's initial turn
             ParallelPipeline(
                 # Host branch: manages the game and provides words
                 [
-                    consumer,             # Receives audio from the player branch
-                    host_llm,             # AI host that provides words and tracks score
-                    game_state_tracker,   # Tracks words and score from host responses
-                    host_tts,             # Converts host text to speech
+                    consumer,  # Receives audio from the player branch
+                    host_llm,  # AI host that provides words and tracks score
+                    game_state_tracker,  # Tracks words and score from host responses
+                    host_tts,  # Converts host text to speech
                     bot_stopped_speaking_detector,  # Notifies when host stops speaking
                 ],
                 # Player branch: guesses words based on human descriptions
                 [
-                    start_frame_gate,     # Gates the player until host finishes intro
-                    player_llm,           # AI player that makes guesses
-                    producer,             # Collects audio frames to be passed to the consumer
+                    start_frame_gate,  # Gates the player until host finishes intro
+                    player_llm,  # AI player that makes guesses
+                    producer,  # Collects audio frames to be passed to the consumer
                 ],
             ),
             transport.output(),  # Send audio/video back to Daily call
