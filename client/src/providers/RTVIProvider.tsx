@@ -1,10 +1,18 @@
-'use client';
+"use client";
 
-import { RTVIClient } from '@pipecat-ai/client-js';
-import { DailyTransport } from '@pipecat-ai/daily-transport';
-import { RTVIClientProvider } from '@pipecat-ai/client-react';
-import { PropsWithChildren, useEffect, useState, useRef } from 'react';
-import { useConfigurationSettings } from '@/contexts/Configuration';
+import { RTVIClient } from "@pipecat-ai/client-js";
+import { DailyTransport } from "@pipecat-ai/daily-transport";
+import { RTVIClientProvider } from "@pipecat-ai/client-react";
+import { PropsWithChildren, useEffect, useState, useRef } from "react";
+import { useConfigurationSettings } from "@/contexts/Configuration";
+
+// Get the API base URL from environment variables
+// Default to "/api" if not specified
+// "/api" is the default for Next.js API routes and used
+// for the Pipecat Cloud deployed agent
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+
+console.log("Using API base URL:", API_BASE_URL);
 
 export function RTVIProvider({ children }: PropsWithChildren) {
   const [client, setClient] = useState<RTVIClient | null>(null);
@@ -20,9 +28,9 @@ export function RTVIProvider({ children }: PropsWithChildren) {
     const rtviClient = new RTVIClient({
       transport,
       params: {
-        baseUrl: '/api',
+        baseUrl: API_BASE_URL,
         endpoints: {
-          connect: '/connect',
+          connect: "/connect",
         },
         requestData: {
           personality: config.personality,
@@ -39,7 +47,7 @@ export function RTVIProvider({ children }: PropsWithChildren) {
     return () => {
       if (rtviClient) {
         rtviClient.disconnect().catch((err) => {
-          console.error('Error disconnecting client:', err);
+          console.error("Error disconnecting client:", err);
         });
       }
       clientCreated.current = false;
