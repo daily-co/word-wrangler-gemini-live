@@ -19,7 +19,7 @@ import Star from "../assets/star.png";
 
 export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
-  const [gameEnded, setGameEnded] = useState(true);
+  const [gameEnded, setGameEnded] = useState(false);
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const config = useConfigurationSettings();
@@ -55,8 +55,10 @@ export default function Home() {
               <div className="h-[1px] bg-slate-200 my-6" />
               <div className="flex items-center justify-center">
                 <Link
-                  href="https://github.com/pipecat-ai/word-wrangler"
+                  href="https://github.com/daily-co/word-wrangler-gemini-live"
                   className="button ghost w-full lg:w-auto"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <IconCode size={24} />
                   View project source code
