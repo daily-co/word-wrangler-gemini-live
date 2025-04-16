@@ -4,9 +4,15 @@ import { StartGameButton } from "@/components/StartButton";
 import { GAME_TEXT } from "@/constants/gameConstants";
 import { useConfigurationSettings } from "@/contexts/Configuration";
 import { PERSONALITY_PRESETS, PersonalityType } from "@/types/personality";
-import { IconArrowForwardUp, IconCheck, IconX } from "@tabler/icons-react";
+import {
+  IconArrowForwardUp,
+  IconCheck,
+  IconCode,
+  IconX,
+} from "@tabler/icons-react";
 import JSConfetti from "js-confetti";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "../assets/logo.png";
 import Star from "../assets/star.png";
@@ -46,6 +52,18 @@ export default function Home() {
                   {bestScore}
                 </span>
               </p>
+              <div className="h-[1px] bg-slate-200 my-6" />
+              <div className="flex items-center justify-center">
+                <Link
+                  href="https://github.com/daily-co/word-wrangler-gemini-live"
+                  className="button ghost w-full lg:w-auto"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <IconCode size={24} />
+                  View project source code
+                </Link>
+              </div>
             </CardInner>
           </Card>
         </div>
