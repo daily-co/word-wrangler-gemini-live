@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
+import asyncio
 import os
 import sys
 from typing import Any, Dict
@@ -13,7 +14,6 @@ from dotenv import load_dotenv
 from loguru import logger
 from pipecatcloud.agent import DailySessionArguments
 
-from pipecat.audio.filters.krisp_filter import KrispFilter
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -28,18 +28,10 @@ from pipecat.processors.frameworks.rtvi import (
 from pipecat.services.gemini_multimodal_live.gemini import GeminiMultimodalLiveLLMService
 from pipecat.transports.services.daily import DailyParams, DailyTransport
 
+load_dotenv(override=True)
+
 # Check if we're in local development mode
 LOCAL_RUN = os.getenv("LOCAL_RUN")
-if LOCAL_RUN:
-    import asyncio
-    import webbrowser
-
-    try:
-        from runner import configure
-    except ImportError:
-        logger.error("Could not import local_runner module. Local development mode may not work.")
-
-load_dotenv(override=True)
 
 logger.add(sys.stderr, level="DEBUG")
 
@@ -81,31 +73,13 @@ PERSONALITY_PRESETS = {
     "witty": "You have a clever, humorous personality. While remaining informative, you inject appropriate wit and playful language. Your goal is to be engaging and entertaining while still being helpful.",
 }
 
-test_config = {
-    "personality": "witty",
-}
 
-
-async def main(room_url: str, token: str, config: Dict[str, Any]):
+async def main(transport: DailyTransport, config: Dict[str, Any]):
     # Use the provided session logger if available, otherwise use the default logger
-    logger.debug("Starting bot in room: {}", room_url)
     logger.debug("Configuration: {}", config)
 
     # Extract configuration parameters with defaults
     personality = config.get("personality", "witty")
-
-    transport = DailyTransport(
-        room_url,
-        token,
-        "Word Wrangler Bot",
-        DailyParams(
-            audio_in_filter=KrispFilter(),
-            audio_out_enabled=True,
-            vad_enabled=True,
-            vad_analyzer=SileroVADAnalyzer(),
-            vad_audio_passthrough=True,
-        ),
-    )
 
     personality_prompt = PERSONALITY_PRESETS.get(personality, PERSONALITY_PRESETS["friendly"])
 
@@ -200,29 +174,56 @@ async def bot(args: DailySessionArguments):
         body: The configuration object from the request body
         session_id: The session ID for logging
     """
+    from pipecat.audio.filters.krisp_filter import KrispFilter
+
     logger.info(f"Bot process initialized {args.room_url} {args.token}")
 
+    transport = DailyTransport(
+        args.room_url,
+        args.token,
+        "Word Wrangler Bot",
+        DailyParams(
+            audio_in_filter=None if LOCAL_RUN else KrispFilter(),
+            audio_out_enabled=True,
+            vad_enabled=True,
+            vad_analyzer=SileroVADAnalyzer(),
+            vad_audio_passthrough=True,
+        ),
+    )
+
     try:
-        await main(args.room_url, args.token, args.body)
+        await main(transport, args.body)
         logger.info("Bot process completed")
     except Exception as e:
         logger.exception(f"Error in bot process: {str(e)}")
         raise
 
 
-# Local development functions
-async def local_main():
-    """Function for local development testing."""
+# Local development
+async def local_daily():
+    """Daily transport for local development."""
+    from runner import configure
+
     try:
         async with aiohttp.ClientSession() as session:
             (room_url, token) = await configure(session)
-            logger.warning("_")
-            logger.warning("_")
-            logger.warning(f"Talk to your voice agent here: {room_url}")
-            logger.warning("_")
-            logger.warning("_")
-            webbrowser.open(room_url)
-            await main(room_url, token, test_config)
+            transport = DailyTransport(
+                room_url,
+                token,
+                bot_name="Bot",
+                params=DailyParams(
+                    audio_out_enabled=True,
+                    vad_enabled=True,
+                    vad_analyzer=SileroVADAnalyzer(),
+                    vad_audio_passthrough=True,
+                ),
+            )
+
+            test_config = {
+                "personality": "witty",
+            }
+
+            await main(transport, test_config)
     except Exception as e:
         logger.exception(f"Error in local development mode: {e}")
 
@@ -230,6 +231,6 @@ async def local_main():
 # Local development entry point
 if LOCAL_RUN and __name__ == "__main__":
     try:
-        asyncio.run(local_main())
+        asyncio.run(local_daily())
     except Exception as e:
         logger.exception(f"Failed to run in local mode: {e}")

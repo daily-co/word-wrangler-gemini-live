@@ -166,7 +166,7 @@ This architecture enables complex interaction patterns that would be difficult t
 6. Run the server:
 
    ```bash
-   python server.py
+   LOCAL_RUN=1 python server.py
    ```
 
 #### Run the Client
@@ -183,13 +183,25 @@ This architecture enables complex interaction patterns that would be difficult t
    npm install
    ```
 
-3. Run the app:
+3. Create an .env.local file:
+
+   ```bash
+   cp env.example .env.local
+   ```
+
+4. In .env.local:
+
+   - `NEXT_PUBLIC_API_BASE_URL=http://localhost:7860` is used for local development. For deployments, either remove this env var or replace with `/api`.
+   - `AGENT_NAME` should be set to the name of your deployed Pipecat agent (e.g., "word-wrangler").
+   - `PIPECAT_CLOUD_API_KEY` is used only for deployments to Pipecat Cloud.
+
+5. Run the app:
 
    ```bash
    npm run dev
    ```
 
-4. Open http://localhost:3000 in your browser
+6. Open http://localhost:3000 in your browser
 
 ### Phone Game
 
@@ -241,9 +253,51 @@ There are two versions of the phone game:
 
 ## Deployment
 
-Both versions can be deployed to Pipecat Cloud for production use.
+### Web Game
 
-For deployment instructions, visit the [Pipecat Cloud documentation](https://docs.pipecat.daily.co/quickstart).
+#### Deploy your Server
+
+You can deploy your server code using Pipecat Cloud. For a full walkthrough, start with the [Pipecat Cloud Quickstart](https://docs.pipecat.daily.co/quickstart).
+
+Here are the steps you'll need to complete:
+
+- Build, tag, and push your Docker image to a registry.
+- Create Pipecat Cloud secrets using the CLI or dashboard. For this agent, you only need a `GOOGLE_API_KEY`. Your `DAILY_API_KEY` is automatically applied.
+- Deploy your agent image. You can use a pcc-deploy.toml file to make deploying easier. For example:
+
+```toml
+agent_name = "word-wrangler"
+image = "your-dockerhub-name/word-wrangler:0.1"
+secret_set = "word-wrangler-secrets"
+enable_krisp = true
+
+[scaling]
+  min_instances = 1
+  max_instances = 5
+```
+
+Then, you can deploy with the CLI using `pcc deploy`.
+
+- Finally, confirm that your agent is deployed. You'll get feedback in the terminal.
+
+#### Deploy your Client
+
+This project uses TypeScript, React, and Next.js, making it a perfect fit for [Vercel](https://vercel.com/).
+
+- In your client directory, install Vercel's CLI tool: `npm install -g vercel`
+- Verify it's installed using `vercel --version`
+- Log in your Vercel account using `vercel login`
+- Deploy your client to Vercel using `vercel`
+
+### Phone Game
+
+#### Deploy your Server
+
+Again, we'll use Pipecat Cloud. Follow the steps from above. The only difference will be the secrets required; in addition to a GOOGLE_API_KEY, you'll need `GOOGLE_APPLICATION_CREDENTIALS` in the format of a .json file with your [Google Cloud service account](https://console.cloud.google.com/iam-admin/serviceaccounts) information.
+
+#### Buy and Configure a Twilio Number
+
+Check out the [Twilio Websocket Telephony guide](https://docs.pipecat.daily.co/pipecat-in-production/telephony/twilio-mediastreams) for a step-by-step walkthrough on how to purchase a phone number, configure your TwiML, and make or receive calls.
 
 ## Tech stack
 
