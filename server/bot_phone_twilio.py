@@ -34,6 +34,7 @@ from pipecat.frames.frames import (
     EndFrame,
     Frame,
     InputAudioRawFrame,
+    LLMFullResponseEndFrame,
     LLMTextFrame,
     StartFrame,
     TTSAudioRawFrame,
@@ -286,34 +287,34 @@ class GameStateTracker(FrameProcessor):
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
-        # Only check LLMTextFrames from the host LLM
+        # Collect text from LLMTextFrames
         if isinstance(frame, LLMTextFrame):
             text = frame.text
 
-            # Skip the known non-word responses
+            # Skip responses that are "NO" or "IGNORE"
             if text.strip() in ["NO", "IGNORE"]:
+                logger.debug(f"Skipping NO/IGNORE response")
                 await self.push_frame(frame, direction)
                 return
 
             # Add the new text to our buffer
             self._text_buffer += text
 
-            # Check if we have a sentence boundary (period, newline, etc.)
-            sentence_boundaries = [".", "!", "?", "\n"]
-            has_boundary = any(boundary in text for boundary in sentence_boundaries)
-
-            # Also check if buffer is getting too large - safety mechanism
-            buffer_too_large = len(self._text_buffer) > 100
-
-            if has_boundary or buffer_too_large:
+        # Process complete responses when we get an end frame
+        elif isinstance(frame, LLMFullResponseEndFrame):
+            if self._text_buffer:
                 buffer_lower = self._text_buffer.lower()
 
                 # 1. Check for new word announcements
+                new_word_detected = False
                 for phrase in self._key_phrases:
                     if phrase in buffer_lower:
-                        logger.info(f"{self}: New word detected in: '{self._text_buffer}'")
                         await self._new_word_notifier.notify()
+                        new_word_detected = True
                         break
+
+                if not new_word_detected:
+                    logger.debug(f"No new word phrases detected")
 
                 # 2. Check for score updates
                 score_match = self._score_pattern.search(buffer_lower)
@@ -322,15 +323,18 @@ class GameStateTracker(FrameProcessor):
                         score = int(score_match.group(1))
                         # Only update if the new score is higher
                         if score > self._current_score:
-                            logger.info(
-                                f"{self}: Score updated from {self._current_score} to {score}"
-                            )
+                            logger.debug(f"Score updated from {self._current_score} to {score}")
                             self._current_score = score
-                    except ValueError:
-                        # Ignore parsing errors
-                        pass
+                        else:
+                            logger.debug(
+                                f"Ignoring score {score} <= current score {self._current_score}"
+                            )
+                    except ValueError as e:
+                        logger.warning(f"Error parsing score: {e}")
+                else:
+                    logger.debug(f"No score pattern match in: '{buffer_lower}'")
 
-                # Reset the buffer since we've reached a sentence boundary
+                # Reset the buffer after processing the complete response
                 self._text_buffer = ""
 
         # Always push the frame through
