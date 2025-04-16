@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""
-Word Wrangler: A voice-based word guessing game.
+"""Word Wrangler: A voice-based word guessing game.
 
 To run this demo:
 1. Set up environment variables:
@@ -28,6 +27,9 @@ from typing import Any, Mapping, Optional
 import aiohttp
 from dotenv import load_dotenv
 from loguru import logger
+from pipecatcloud.agent import DailySessionArguments
+from word_list import generate_game_words
+
 from pipecat.audio.resamplers.soxr_resampler import SOXRAudioResampler
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.frames.frames import (
@@ -62,8 +64,6 @@ from pipecat.sync.base_notifier import BaseNotifier
 from pipecat.sync.event_notifier import EventNotifier
 from pipecat.transports.services.daily import DailyParams, DailyTransport
 from pipecat.utils.text.base_text_filter import BaseTextFilter
-from pipecatcloud.agent import DailySessionArguments
-from word_list import generate_game_words
 
 load_dotenv(override=True)
 
@@ -609,7 +609,7 @@ Important guidelines:
     host_tts = GoogleTTSService(
         voice_id=HOST_VOICE_ID,
         credentials_path=os.getenv("GOOGLE_TEST_CREDENTIALS_FILE"),
-        text_filter=HostResponseTextFilter(),
+        text_filters=[HostResponseTextFilter()],
     )
 
     producer = ProducerProcessor(

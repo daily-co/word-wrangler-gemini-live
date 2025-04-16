@@ -604,7 +604,7 @@ Important guidelines:
     host_tts = GoogleTTSService(
         voice_id=HOST_VOICE_ID,
         credentials_path=os.getenv("GOOGLE_TEST_CREDENTIALS_FILE"),
-        text_filter=HostResponseTextFilter(),
+        text_filters=[HostResponseTextFilter()],
     )
 
     producer = ProducerProcessor(
