@@ -256,6 +256,16 @@ select::-ms-expand {
     background-color: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.5);
   }
+
+  &.ghost {
+    background-color: var(--color-slate-100);
+    color: var(--color-slate-600);
+    height: var(--button-height-sm);
+  }
+
+  &.ghost:hover {
+    background-color: var(--color-slate-200);
+  }
 }
 
 @media (min-width: 1024px) {

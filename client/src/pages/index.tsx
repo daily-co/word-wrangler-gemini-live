@@ -4,16 +4,22 @@ import { StartGameButton } from "@/components/StartButton";
 import { GAME_TEXT } from "@/constants/gameConstants";
 import { useConfigurationSettings } from "@/contexts/Configuration";
 import { PERSONALITY_PRESETS, PersonalityType } from "@/types/personality";
-import { IconArrowForwardUp, IconCheck, IconX } from "@tabler/icons-react";
+import {
+  IconArrowForwardUp,
+  IconCheck,
+  IconCode,
+  IconX,
+} from "@tabler/icons-react";
 import JSConfetti from "js-confetti";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "../assets/logo.png";
 import Star from "../assets/star.png";
 
 export default function Home() {
   const [hasStarted, setHasStarted] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
+  const [gameEnded, setGameEnded] = useState(true);
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const config = useConfigurationSettings();
@@ -46,6 +52,16 @@ export default function Home() {
                   {bestScore}
                 </span>
               </p>
+              <div className="h-[1px] bg-slate-200 my-6" />
+              <div className="flex items-center justify-center">
+                <Link
+                  href="https://github.com/pipecat-ai/word-wrangler"
+                  className="button ghost w-full lg:w-auto"
+                >
+                  <IconCode size={24} />
+                  View project source code
+                </Link>
+              </div>
             </CardInner>
           </Card>
         </div>
