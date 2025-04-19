@@ -19,7 +19,7 @@ export default async function handler(
     }
 
     const response = await fetch(
-      "https://api.pipecat.daily.co/v1/public/${process.env.AGENT_NAME}/start",
+      `https://api.pipecat.daily.co/v1/public/${process.env.AGENT_NAME}/start`,
       {
         method: "POST",
         headers: {
